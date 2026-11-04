@@ -1,4 +1,3 @@
-
 import os
 import sqlite3
 from functools import wraps
@@ -83,7 +82,7 @@ def init_db():
         )
     """)
 
-    # Create default administrator
+    # Create default administrator if it does not already exist.
     cursor.execute("""
         INSERT OR IGNORE INTO voters
         (voter_id, name, password, role)
@@ -95,7 +94,7 @@ def init_db():
         "admin"
     ))
 
-    # Create demo voters
+    # Create demo voters if they do not already exist.
     demo_voters = [
         ("V001", "Rahul", "123456", "voter"),
         ("V002", "Priya", "123456", "voter"),
@@ -116,7 +115,7 @@ def init_db():
             voter[3]
         ))
 
-    # Create sample election if it does not exist
+    # Create the sample election only if it does not exist.
     cursor.execute("""
         SELECT election_id
         FROM elections
@@ -136,13 +135,13 @@ def init_db():
 
         election_id = cursor.lastrowid
 
-        candidates = [
+        sample_candidates = [
             ("Aarav Sharma", "Unity Party"),
             ("Ananya Rao", "Progress Party"),
             ("Rohan Kumar", "Student First")
         ]
 
-        for candidate in candidates:
+        for candidate in sample_candidates:
             cursor.execute("""
                 INSERT INTO candidates
                 (name, party, election_id)
@@ -210,11 +209,12 @@ def home():
             SELECT *
             FROM candidates
             WHERE election_id = ?
+            ORDER BY candidate_id
         """, (active_election["election_id"],)).fetchall()
 
     already_voted = False
 
-    if "voter_id" in session and active_election:
+    if session.get("role") == "voter" and active_election:
         vote = conn.execute("""
             SELECT vote_id
             FROM votes
@@ -234,7 +234,9 @@ def home():
         elections=elections,
         active_election=active_election,
         candidates=candidates,
-        already_voted=already_voted
+        already_voted=already_voted,
+        show_admin=False,
+        show_results=False
     )
 
 
@@ -297,6 +299,7 @@ def login():
     conn.close()
 
     if voter and check_password_hash(voter["password"], password):
+        session.clear()
         session["voter_id"] = voter["voter_id"]
         session["name"] = voter["name"]
         session["role"] = voter["role"]
@@ -378,9 +381,11 @@ def cast_vote():
     return redirect(url_for("home"))
 
 
-# ---------------- RESULTS ----------------
+# ---------------- RESULTS (ADMIN ONLY) ----------------
 
 @app.route("/results")
+@login_required
+@admin_required
 def results():
     conn = get_db()
 
@@ -417,13 +422,11 @@ def results():
                 LEFT JOIN votes v
                     ON c.candidate_id = v.candidate_id
                 WHERE c.election_id = ?
-                GROUP BY c.candidate_id
-                ORDER BY vote_count DESC
+                GROUP BY c.candidate_id, c.name, c.party
+                ORDER BY vote_count DESC, c.name ASC
             """, (selected_id,)).fetchall()
 
-            total_votes = sum(
-                row["vote_count"] for row in results_data
-            )
+            total_votes = sum(row["vote_count"] for row in results_data)
 
     conn.close()
 
@@ -433,6 +436,7 @@ def results():
         active_election=None,
         candidates=[],
         already_voted=False,
+        show_admin=False,
         show_results=True,
         selected_election=selected_election,
         results_data=results_data,
@@ -470,6 +474,18 @@ def admin():
         FROM candidates
     """).fetchone()["total"]
 
+    all_candidates = conn.execute("""
+        SELECT
+            c.candidate_id,
+            c.name,
+            c.party,
+            c.election_id,
+            e.title AS election_title
+        FROM candidates c
+        JOIN elections e ON e.election_id = c.election_id
+        ORDER BY c.candidate_id DESC
+    """).fetchall()
+
     conn.close()
 
     return render_template(
@@ -479,9 +495,11 @@ def admin():
         candidates=[],
         already_voted=False,
         show_admin=True,
+        show_results=False,
         voters_count=voters_count,
         votes_count=votes_count,
-        candidates_count=candidates_count
+        candidates_count=candidates_count,
+        all_candidates=all_candidates
     )
 
 
@@ -570,10 +588,7 @@ def toggle_election(election_id):
     """, (election_id,)).fetchone()
 
     if election:
-        new_status = (
-            "Closed" if election["status"] == "Active"
-            else "Active"
-        )
+        new_status = "Closed" if election["status"] == "Active" else "Active"
 
         conn.execute("""
             UPDATE elections
@@ -582,10 +597,85 @@ def toggle_election(election_id):
         """, (new_status, election_id))
 
         conn.commit()
+        flash("Election status updated.", "success")
+    else:
+        flash("Election not found.", "error")
 
     conn.close()
+    return redirect(url_for("admin"))
 
-    flash("Election status updated.", "success")
+
+# ---------------- DELETE ELECTION ----------------
+
+@app.route("/admin/delete-election/<int:election_id>", methods=["POST"])
+@login_required
+@admin_required
+def delete_election(election_id):
+    conn = get_db()
+
+    election = conn.execute("""
+        SELECT election_id
+        FROM elections
+        WHERE election_id = ?
+    """, (election_id,)).fetchone()
+
+    if not election:
+        conn.close()
+        flash("Election not found.", "error")
+        return redirect(url_for("admin"))
+
+    try:
+        # Remove dependent rows first because the existing votes table
+        # does not declare ON DELETE CASCADE for its foreign keys.
+        conn.execute("DELETE FROM votes WHERE election_id = ?", (election_id,))
+        conn.execute("DELETE FROM candidates WHERE election_id = ?", (election_id,))
+        conn.execute("DELETE FROM elections WHERE election_id = ?", (election_id,))
+        conn.commit()
+        flash("Election, candidates, and related votes deleted successfully.", "success")
+
+    except sqlite3.Error:
+        conn.rollback()
+        flash("Could not delete the election. Please try again.", "error")
+
+    finally:
+        conn.close()
+
+    return redirect(url_for("admin"))
+
+
+# ---------------- DELETE CANDIDATE / ELECTION MEMBER ----------------
+
+@app.route("/admin/delete-candidate/<int:candidate_id>", methods=["POST"])
+@login_required
+@admin_required
+def delete_candidate(candidate_id):
+    conn = get_db()
+
+    candidate = conn.execute("""
+        SELECT candidate_id
+        FROM candidates
+        WHERE candidate_id = ?
+    """, (candidate_id,)).fetchone()
+
+    if not candidate:
+        conn.close()
+        flash("Candidate/member not found.", "error")
+        return redirect(url_for("admin"))
+
+    try:
+        # Remove votes for this candidate before deleting the candidate.
+        conn.execute("DELETE FROM votes WHERE candidate_id = ?", (candidate_id,))
+        conn.execute("DELETE FROM candidates WHERE candidate_id = ?", (candidate_id,))
+        conn.commit()
+        flash("Candidate/member and related votes deleted successfully.", "success")
+
+    except sqlite3.Error:
+        conn.rollback()
+        flash("Could not delete the candidate/member. Please try again.", "error")
+
+    finally:
+        conn.close()
+
     return redirect(url_for("admin"))
 
 

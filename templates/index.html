@@ -1,67 +1,65 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>VoteSphere | Online Voting System</title>
 
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
-    <script src="{{ url_for('static', filename='script.js') }}"
-            defer></script>
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 
 <body>
 
-<header class="navbar">
-    <a href="/" class="logo">
-        <span class="logo-icon">V</span>
-        VoteSphere
-    </a>
+    <header class="navbar">
+        <a href="/" class="logo">
+            <span class="logo-icon">V</span>
+            VoteSphere
+        </a>
 
-    <nav>
-        <a href="/">Home</a>
-        <a href="/results">Results</a>
+        <nav>
+            <a href="/">Home</a>
 
-        {% if session.get('role') == 'admin' %}
+            {% if session.get('role') == 'admin' %}
+            <a href="/results">Results</a>
             <a href="/admin">Admin Dashboard</a>
-        {% endif %}
+            {% endif %}
 
-        {% if session.get('voter_id') %}
+            {% if session.get('voter_id') %}
             <span class="user-name">
                 {{ session.get('name') }}
             </span>
             <a href="/logout" class="nav-button">Logout</a>
-        {% else %}
+            {% else %}
             <a href="#login" class="nav-button">Login</a>
-        {% endif %}
-    </nav>
-</header>
+            {% endif %}
+        </nav>
+    </header>
 
 
-<main class="container">
+    <main class="container">
 
-    <!-- FLASH MESSAGES -->
+        <!-- FLASH MESSAGES -->
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <div class="flash-container">
-                {% for category, message in messages %}
-                    <div class="flash {{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash {{ category }}">
+                {{ message }}
             </div>
+            {% endfor %}
+        </div>
         {% endif %}
-    {% endwith %}
+        {% endwith %}
 
 
-    <!-- HOME PAGE -->
+        <!-- HOME PAGE -->
 
-    {% if not show_admin and not show_results %}
+        {% if not show_admin and not show_results %}
 
         <section class="hero">
 
@@ -136,9 +134,9 @@
 
                 <span class="status-pill">
                     {% if active_election %}
-                        {{ active_election['status'] }}
+                    {{ active_election['status'] }}
                     {% else %}
-                        No Active Election
+                    No Active Election
                     {% endif %}
                 </span>
             </div>
@@ -146,128 +144,128 @@
 
             {% if active_election %}
 
-                <div class="election-banner">
+            <div class="election-banner">
 
-                    <div>
-                        <span class="eyebrow">
-                            ELECTION {{ active_election['election_id'] }}
-                        </span>
+                <div>
+                    <span class="eyebrow">
+                        ELECTION {{ active_election['election_id'] }}
+                    </span>
 
-                        <h3>{{ active_election['title'] }}</h3>
+                    <h3>{{ active_election['title'] }}</h3>
 
-                        <p>
-                            Choose your preferred candidate.
-                            Your vote is recorded securely.
-                        </p>
-                    </div>
-
-                    <div class="election-icon">🗳</div>
-
+                    <p>
+                        Choose your preferred candidate.
+                        Your vote is recorded securely.
+                    </p>
                 </div>
 
+                <div class="election-icon">🗳</div>
 
-                {% if session.get('role') == 'voter' %}
+            </div>
 
-                    {% if already_voted %}
 
-                        <div class="notice success-notice">
-                            <h3>✓ You have already voted</h3>
-                            <p>
-                                Your vote has been recorded.
-                                Thank you for participating.
-                            </p>
-                        </div>
+            {% if session.get('role') == 'voter' %}
 
-                    {% else %}
+            {% if already_voted %}
 
-                        <form action="/vote"
-                              method="POST"
-                              id="votingForm">
-
-                            <input type="hidden"
-                                   name="election_id"
-                                   value="{{ active_election['election_id'] }}">
-
-                            <div class="candidate-grid">
-
-                                {% for candidate in candidates %}
-
-                                    <label class="candidate-card">
-
-                                        <input type="radio"
-                                               name="candidate_id"
-                                               value="{{ candidate['candidate_id'] }}"
-                                               required>
-
-                                        <div class="candidate-avatar">
-                                            {{ candidate['name'][0] }}
-                                        </div>
-
-                                        <h3>{{ candidate['name'] }}</h3>
-
-                                        <p>{{ candidate['party'] }}</p>
-
-                                        <div class="select-label">
-                                            Select Candidate
-                                        </div>
-
-                                    </label>
-
-                                {% endfor %}
-
-                            </div>
-
-                            <div class="vote-action">
-
-                                <p>
-                                    Your selection cannot be changed
-                                    after submitting.
-                                </p>
-
-                                <button type="submit"
-                                        class="primary-button">
-                                    Submit Vote →
-                                </button>
-
-                            </div>
-
-                        </form>
-
-                    {% endif %}
-
-                {% elif not session.get('voter_id') %}
-
-                    <div class="notice">
-                        <h3>Ready to cast your vote?</h3>
-                        <p>
-                            Login with your registered voter ID
-                            to participate in this election.
-                        </p>
-
-                        <a href="#login" class="primary-button">
-                            Login to Vote
-                        </a>
-                    </div>
-
-                {% else %}
-
-                    <div class="notice">
-                        <h3>Administrator Account</h3>
-                        <p>
-                            Admin accounts cannot cast votes.
-                        </p>
-                    </div>
-
-                {% endif %}
+            <div class="notice success-notice">
+                <h3>✓ You have already voted</h3>
+                <p>
+                    Your vote has been recorded.
+                    Thank you for participating.
+                </p>
+            </div>
 
             {% else %}
 
-                <div class="notice">
-                    <h3>No active election available</h3>
-                    <p>
-                        Please check back later.
-                    </p>
+            <form action="/vote" method="POST" id="votingForm">
+
+                <input type="hidden" name="election_id" value="{{ active_election['election_id'] }}">
+
+                <div class="candidate-grid">
+
+                    {% for candidate in candidates %}
+
+                    <label class="candidate-card">
+
+                        <input type="radio" name="candidate_id" value="{{ candidate['candidate_id'] }}" required>
+
+                        <div class="candidate-avatar">
+                            {{ candidate['name'][0] }}
+                        </div>
+
+                        <h3>{{ candidate['name'] }}</h3>
+
+                        <p>{{ candidate['party'] }}</p>
+
+                        <div class="select-label">
+                            Select Candidate
+                        </div>
+
+                    </label>
+
+                    {% else %}
+
+                    <div class="notice">
+                        No candidates have been added to this election yet.
+                    </div>
+
+                    {% endfor %}
+
                 </div>
+
+                {% if candidates %}
+                <div class="vote-action">
+
+                    <p>
+                        Your selection cannot be changed
+                        after submitting.
+                    </p>
+
+                    <button type="submit" class="primary-button">
+                        Submit Vote →
+                    </button>
+
+                </div>
+                {% endif %}
+
+            </form>
+
+            {% endif %}
+
+            {% elif not session.get('voter_id') %}
+
+            <div class="notice">
+                <h3>Ready to cast your vote?</h3>
+                <p>
+                    Login with your registered voter ID
+                    to participate in this election.
+                </p>
+
+                <a href="#login" class="primary-button">
+                    Login to Vote
+                </a>
+            </div>
+
+            {% else %}
+
+            <div class="notice">
+                <h3>Administrator Account</h3>
+                <p>
+                    Admin accounts cannot cast votes.
+                </p>
+            </div>
+
+            {% endif %}
+
+            {% else %}
+
+            <div class="notice">
+                <h3>No active election available</h3>
+                <p>
+                    Please check back later.
+                </p>
+            </div>
 
             {% endif %}
 
@@ -278,94 +276,79 @@
 
         {% if not session.get('voter_id') %}
 
-            <section id="login" class="auth-section">
+        <section id="login" class="auth-section">
 
-                <div class="auth-intro">
-                    <span class="eyebrow">GET STARTED</span>
-                    <h2>Welcome to VoteSphere</h2>
-                    <p>
-                        Login to participate in elections,
-                        or create a voter account.
-                    </p>
-                </div>
+            <div class="auth-intro">
+                <span class="eyebrow">GET STARTED</span>
+                <h2>Welcome to VoteSphere</h2>
+                <p>
+                    Login to participate in elections,
+                    or create a voter account.
+                </p>
+            </div>
 
-                <div class="auth-grid">
+            <div class="auth-grid">
 
-                    <div class="auth-card">
+                <div class="auth-card">
 
-                        <h3>Voter Login</h3>
+                    <h3>Voter Login</h3>
 
-                        <form action="/login" method="POST">
+                    <form action="/login" method="POST">
 
-                            <label>Voter ID</label>
+                        <label>Voter ID</label>
 
-                            <input type="text"
-                                   name="voter_id"
-                                   placeholder="Enter voter ID"
-                                   required>
+                        <input type="text" name="voter_id" placeholder="Enter voter ID" required>
 
-                            <label>Password</label>
+                        <label>Password</label>
 
-                            <input type="password"
-                                   name="password"
-                                   placeholder="Enter password"
-                                   required>
+                        <input type="password" name="password" placeholder="Enter password" required>
 
-                            <button class="primary-button full-width">
-                                Login
-                            </button>
+                        <button class="primary-button full-width">
+                            Login
+                        </button>
 
-                        </form>
-
-                    </div>
-
-
-                    <div class="auth-card">
-
-                        <h3>Create Account</h3>
-
-                        <form action="/register" method="POST">
-
-                            <label>Voter ID</label>
-
-                            <input type="text"
-                                   name="voter_id"
-                                   placeholder="Create unique voter ID"
-                                   required>
-
-                            <label>Full Name</label>
-
-                            <input type="text"
-                                   name="name"
-                                   placeholder="Enter your name"
-                                   required>
-
-                            <label>Password</label>
-
-                            <input type="password"
-                                   name="password"
-                                   minlength="6"
-                                   placeholder="Minimum 6 characters"
-                                   required>
-
-                            <button class="secondary-button full-width">
-                                Register
-                            </button>
-
-                        </form>
-
-                    </div>
+                    </form>
 
                 </div>
 
-            </section>
+
+                <div class="auth-card">
+
+                    <h3>Create Account</h3>
+
+                    <form action="/register" method="POST">
+
+                        <label>Voter ID</label>
+
+                        <input type="text" name="voter_id" placeholder="Create unique voter ID" required>
+
+                        <label>Full Name</label>
+
+                        <input type="text" name="name" placeholder="Enter your name" required>
+
+                        <label>Password</label>
+
+                        <input type="password" name="password" minlength="6" placeholder="Minimum 6 characters"
+                            required>
+
+                        <button class="secondary-button full-width">
+                            Register
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </section>
 
         {% endif %}
 
 
-    <!-- ADMIN DASHBOARD -->
+        <!-- ADMIN DASHBOARD -->
 
-    {% elif show_admin %}
+        {% elif show_admin %}
 
         <section class="section">
 
@@ -403,15 +386,11 @@
 
                     <h3>Create Election</h3>
 
-                    <form action="/admin/add-election"
-                          method="POST">
+                    <form action="/admin/add-election" method="POST">
 
                         <label>Election Title</label>
 
-                        <input type="text"
-                               name="title"
-                               placeholder="Enter election name"
-                               required>
+                        <input type="text" name="title" placeholder="Enter election name" required>
 
                         <label>Status</label>
 
@@ -433,22 +412,15 @@
 
                     <h3>Add Candidate</h3>
 
-                    <form action="/admin/add-candidate"
-                          method="POST">
+                    <form action="/admin/add-candidate" method="POST">
 
                         <label>Candidate Name</label>
 
-                        <input type="text"
-                               name="name"
-                               placeholder="Candidate name"
-                               required>
+                        <input type="text" name="name" placeholder="Candidate name" required>
 
                         <label>Political Party</label>
 
-                        <input type="text"
-                               name="party"
-                               placeholder="Party name"
-                               required>
+                        <input type="text" name="party" placeholder="Party name" required>
 
                         <label>Select Election</label>
 
@@ -456,9 +428,15 @@
 
                             {% for election in elections %}
 
-                                <option value="{{ election['election_id'] }}">
-                                    {{ election['title'] }}
-                                </option>
+                            <option value="{{ election['election_id'] }}">
+                                {{ election['title'] }}
+                            </option>
+
+                            {% else %}
+
+                            <option value="" disabled selected>
+                                Create an election first
+                            </option>
 
                             {% endfor %}
 
@@ -489,6 +467,7 @@
                                 <th>Status</th>
                                 <th>Action</th>
                                 <th>Results</th>
+                                <th>Delete</th>
                             </tr>
                         </thead>
 
@@ -496,40 +475,106 @@
 
                             {% for election in elections %}
 
-                                <tr>
+                            <tr>
 
-                                    <td>{{ election['title'] }}</td>
+                                <td>{{ election['title'] }}</td>
 
-                                    <td>
-                                        <span class="status-pill">
-                                            {{ election['status'] }}
-                                        </span>
-                                    </td>
+                                <td>
+                                    <span class="status-pill">
+                                        {{ election['status'] }}
+                                    </span>
+                                </td>
 
-                                    <td>
+                                <td>
 
-                                        <form action="/admin/toggle-election/{{ election['election_id'] }}"
-                                              method="POST">
+                                    <form action="/admin/toggle-election/{{ election['election_id'] }}" method="POST">
 
-                                            <button class="small-button">
-                                                {% if election['status'] == 'Active' %}
-                                                    Close
-                                                {% else %}
-                                                    Activate
-                                                {% endif %}
-                                            </button>
+                                        <button class="small-button">
+                                            {% if election['status'] == 'Active' %}
+                                            Close
+                                            {% else %}
+                                            Activate
+                                            {% endif %}
+                                        </button>
 
-                                        </form>
+                                    </form>
 
-                                    </td>
+                                </td>
 
-                                    <td>
-                                        <a href="/results?election_id={{ election['election_id'] }}">
-                                            View
-                                        </a>
-                                    </td>
+                                <td>
+                                    <a href="/results?election_id={{ election['election_id'] }}">
+                                        View
+                                    </a>
+                                </td>
 
-                                </tr>
+                                <td>
+                                    <form action="/admin/delete-election/{{ election['election_id'] }}" method="POST"
+                                        onsubmit="return confirm('Delete this election, all its candidates, and all votes recorded in it? This action cannot be undone.');">
+                                        <button type="submit" class="small-button">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </td>
+
+                            </tr>
+
+                            {% else %}
+
+                            <tr>
+                                <td colspan="5">No elections have been created.</td>
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <div class="auth-card election-management">
+
+                <h3>Manage Election Members / Candidates</h3>
+
+                <div class="table-wrapper">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Candidate / Member</th>
+                                <th>Party</th>
+                                <th>Election</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            {% for candidate in all_candidates %}
+
+                            <tr>
+                                <td>{{ candidate['name'] }}</td>
+                                <td>{{ candidate['party'] }}</td>
+                                <td>{{ candidate['election_title'] }}</td>
+                                <td>
+                                    <form action="/admin/delete-candidate/{{ candidate['candidate_id'] }}" method="POST"
+                                        onsubmit="return confirm('Delete this candidate/member and all votes given to them? This action cannot be undone.');">
+                                        <button type="submit" class="small-button">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+
+                            {% else %}
+
+                            <tr>
+                                <td colspan="4">No candidates or members found.</td>
+                            </tr>
 
                             {% endfor %}
 
@@ -544,9 +589,9 @@
         </section>
 
 
-    <!-- RESULTS PAGE -->
+        <!-- RESULTS PAGE: THE SERVER ROUTE ALLOWS ADMINS ONLY -->
 
-    {% elif show_results %}
+        {% elif show_results %}
 
         <section class="section">
 
@@ -554,145 +599,146 @@
                 <div>
                     <span class="eyebrow">ELECTION STATISTICS</span>
                     <h2>Election Results</h2>
-                    <p>Vote counts for each candidate.</p>
+                    <p>Vote counts for each candidate. This page is visible only to administrators.</p>
                 </div>
             </div>
 
 
             {% if elections %}
 
-                <form action="/results"
-                      method="GET"
-                      class="result-filter">
+            <form action="/results" method="GET" class="result-filter">
 
-                    <label>Select Election</label>
+                <label>Select Election</label>
 
-                    <select name="election_id"
-                            onchange="this.form.submit()">
+                <select name="election_id" onchange="this.form.submit()">
 
-                        {% for election in elections %}
+                    {% for election in elections %}
 
-                            <option value="{{ election['election_id'] }}"
-                                {% if selected_election and selected_election['election_id'] == election['election_id'] %}
-                                    selected
-                                {% endif %}>
+                    <option value="{{ election['election_id'] }}" {% if selected_election and
+                        selected_election['election_id']==election['election_id'] %} selected {% endif %}>
 
-                                {{ election['title'] }}
+                        {{ election['title'] }}
 
-                            </option>
+                    </option>
 
-                        {% endfor %}
+                    {% endfor %}
 
-                    </select>
+                </select>
 
-                </form>
+            </form>
 
             {% endif %}
 
 
             {% if selected_election %}
 
-                <div class="election-banner">
+            <div class="election-banner">
 
-                    <div>
-                        <span class="eyebrow">RESULT SUMMARY</span>
+                <div>
+                    <span class="eyebrow">RESULT SUMMARY</span>
 
-                        <h3>{{ selected_election['title'] }}</h3>
+                    <h3>{{ selected_election['title'] }}</h3>
 
-                        <p>
-                            Total votes recorded:
-                            <strong>{{ total_votes }}</strong>
-                        </p>
-                    </div>
-
-                    <div class="election-icon">📊</div>
-
+                    <p>
+                        Total votes recorded:
+                        <strong>{{ total_votes }}</strong>
+                    </p>
                 </div>
 
+                <div class="election-icon">📊</div>
 
-                <div class="results-list">
+            </div>
 
-                    {% for result in results_data %}
 
-                        {% set percentage = (
-                            result['vote_count'] / total_votes * 100
-                            if total_votes > 0 else 0
-                        ) %}
+            <div class="results-list">
 
-                        <div class="result-card">
+                {% for result in results_data %}
 
-                            <div class="result-header">
+                {% set percentage = (
+                result['vote_count'] / total_votes * 100
+                if total_votes > 0 else 0
+                ) %}
 
-                                <div>
-                                    <h3>{{ result['name'] }}</h3>
-                                    <p>{{ result['party'] }}</p>
-                                </div>
+                <div class="result-card">
 
-                                <div class="result-numbers">
-                                    <strong>
-                                        {{ result['vote_count'] }}
-                                    </strong>
+                    <div class="result-header">
 
-                                    <span>
-                                        {{ "%.1f"|format(percentage) }}%
-                                    </span>
-                                </div>
-
-                            </div>
-
-                            <div class="progress-track">
-
-                                <div class="progress-bar"
-                                     style="width: {{ percentage }}%">
-                                </div>
-
-                            </div>
-
+                        <div>
+                            <h3>{{ result['name'] }}</h3>
+                            <p>{{ result['party'] }}</p>
                         </div>
 
-                    {% endfor %}
+                        <div class="result-numbers">
+                            <strong>
+                                {{ result['vote_count'] }}
+                            </strong>
+
+                            <span>
+                                {{ "%.1f"|format(percentage) }}%
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div class="progress-track">
+
+                        <div class="progress-bar" style="width: {{ percentage }}%">
+                        </div>
+
+                    </div>
 
                 </div>
 
-                {% if total_votes == 0 %}
+                {% else %}
 
-                    <div class="notice">
-                        No votes have been recorded yet.
-                    </div>
+                <div class="notice">
+                    No candidates are registered for this election.
+                </div>
 
-                {% endif %}
+                {% endfor %}
+
+            </div>
+
+            {% if total_votes == 0 %}
+
+            <div class="notice">
+                No votes have been recorded yet.
+            </div>
+
+            {% endif %}
 
             {% else %}
 
-                <div class="notice">
-                    No elections available.
-                </div>
+            <div class="notice">
+                No elections available.
+            </div>
 
             {% endif %}
 
         </section>
 
-    {% endif %}
+        {% endif %}
 
-</main>
+    </main>
 
 
-<footer class="footer">
+    <footer class="footer">
 
-    <div class="logo">
-        <span class="logo-icon">V</span>
-        VoteSphere
-    </div>
+        <div class="logo">
+            <span class="logo-icon">V</span>
+            VoteSphere
+        </div>
 
-    <p>
-        DBMS Mini Project | Online Voting System
-    </p>
+        <p>
+            DBMS Mini Project | Online Voting System
+        </p>
 
-    <p class="footer-small">
-        Academic demonstration only.
-    </p>
+        <p class="footer-small">
+            Academic demonstration only.
+        </p>
 
-</footer>
+    </footer>
 
 </body>
+
 </html>
